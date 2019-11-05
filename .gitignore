@@ -27,3 +27,7 @@ hs_err_pid*
 .settings/org.eclipse.core.resources.prefs
 .settings/org.eclipse.jdt.core.prefs
 .settings/org.eclipse.m2e.core.prefs
+bin/.gitignore
+bin/pom.xml
+bin/README.md
+bin/src/main/resources/OpenAPI301.json
