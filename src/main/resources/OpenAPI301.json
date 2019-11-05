@@ -14,7 +14,7 @@
     },
     "servers": [
         {
-            "url": "https://os-ogc-features-api.azurewebsites.net/",
+            "url": "####",
             "description": "This server"
         }
     ],

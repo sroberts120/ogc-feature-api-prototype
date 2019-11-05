@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
 import org.json.simple.parser.ParseException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -36,6 +37,9 @@ import co.uk.ordnancesurvey.exceptions.InvalidAcceptsTypeException;
  */
 @RestController
 public class WfsFeaturesController {
+	
+	@Value("${ogc.service.url}")
+	private String serviceURL;
 
 	/**
 	 * Landing page.
@@ -51,10 +55,10 @@ public class WfsFeaturesController {
 	public Links landingPage(@RequestHeader("Accept") String accept, @RequestParam(required = false) String f) {
 		//TODO implement correct error handling according to spec
 		if (f == null || f.equals("application/json")) {
-			Link landingPage = new Link("self", "application/json", "This document", "https://os-ogc-features-api.azurewebsites.net/?f=application%2Fjson");
-			Link api = new Link("service", "application/json", "API definition for this endpoint as application/json", "https://os-ogc-features-api.azurewebsites.net/api?f=application%2Fjson");
-			Link conformance = new Link("conformance", "application/json", "Conformance declaratoin as application/json", "https://os-ogc-features-api.azurewebsites.net/conformance?f=application%2Fjson");
-			Link data = new Link("data", "application/json", "Collections Metadata as application/json", "https://os-ogc-features-api.azurewebsites.net/collections?f=application%2Fjson");
+			Link landingPage = new Link("self", "application/json", "This document", serviceURL+"/?f=application%2Fjson");
+			Link api = new Link("service", "application/json", "API definition for this endpoint as application/json", serviceURL+"/api?f=application%2Fjson");
+			Link conformance = new Link("conformance", "application/json", "Conformance declaratoin as application/json", serviceURL+"/conformance?f=application%2Fjson");
+			Link data = new Link("data", "application/json", "Collections Metadata as application/json", serviceURL+"/collections?f=application%2Fjson");
 
 			ArrayList<Link> linkArray = new ArrayList<>();
 			linkArray.add(landingPage);
@@ -83,6 +87,7 @@ public class WfsFeaturesController {
 		ClassLoader classLoader = getClass().getClassLoader();
 		InputStream inputStream = classLoader.getResourceAsStream("OpenAPI301.json");
 		String result = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+		result = result.replace("####", serviceURL);
 		return new ResponseEntity<Object>(result, HttpStatus.OK);
 	}
 
