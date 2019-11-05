@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.uk.ordnancesurvey.api.resources.CollectionItem;
+import co.uk.ordnancesurvey.api.resources.Collections;
 import co.uk.ordnancesurvey.api.resources.ConformsTo;
 import co.uk.ordnancesurvey.api.resources.Link;
 import co.uk.ordnancesurvey.api.resources.Links;
@@ -78,8 +80,8 @@ public class WfsFeaturesController {
 	 * This service returns the OpenAPI 3.0.0 standard resposne to service description.
 	 * (This response can be pulled into sweagger etc)
 	 * 
-	 * This 
-	 * @return
+	 * This will describe what requests can be made using the service.
+	 * @return OpenAPI json response
 	 * @throws IOException
 	 */
 	@RequestMapping(value = "/api", produces = "application/json")
@@ -91,6 +93,15 @@ public class WfsFeaturesController {
 		return new ResponseEntity<Object>(result, HttpStatus.OK);
 	}
 
+	
+	/**
+	 * Conformance
+	 * 
+	 * I need to understand better.
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
 	@RequestMapping(value = "/conformance", produces = "application/json")
 	public ResponseEntity<Object> conformance() throws IOException, ParseException {
 		ArrayList<String> conformsTo = new ArrayList<>();
@@ -101,5 +112,33 @@ public class WfsFeaturesController {
 		return new ResponseEntity<Object>(comformance, HttpStatus.OK);
 
 	}
+	
+	@RequestMapping(value = "/collections", produces = "application/json")
+	public ResponseEntity<Object> collection() throws IOException, ParseException {
+		Link landingPage = new Link("self", "application/json", "This document", serviceURL+"/collections?f=application%2Fjson");
+		ArrayList<Link> linkArray = new ArrayList<>();
+		linkArray.add(landingPage);
+		Links linksSet = new Links(linkArray);
+		
+		ArrayList<Object> collectionResponse = new ArrayList<>();
+		collectionResponse.add(linksSet);
+		
+		ArrayList<CollectionItem> collectionItems = new ArrayList<CollectionItem>();
+		ArrayList<Double> extents = new ArrayList<Double>();
+		extents.add(1234.76);
+		extents.add(2645474.99);
+		
+		ArrayList<Link> collectionLink = new ArrayList<Link>();
+		collectionLink.add(new Link("item", "application/json" , "Buildings items as application/json", serviceURL + "/collections/buildings/items?f=application/json"));
+
+		CollectionItem collectionItem = new CollectionItem("12234", "Test", extents, collectionLink);
+		collectionItems.add(collectionItem);
+		Collections collections = new Collections(collectionItems);
+		collectionResponse.add(collections);
+		return new ResponseEntity<Object>(collectionResponse, HttpStatus.OK);
+
+	}
+	
+	
 
 }

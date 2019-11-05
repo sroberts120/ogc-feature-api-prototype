@@ -1,7 +1,6 @@
 package co.uk.ordnancesurvey.api.resources;
 
 public class Link {
-	private final String rel;
 
 	public Link(String rel, String type, String title, String href) {
 		super();
@@ -14,6 +13,7 @@ public class Link {
 	private final String type;
 	private final String title;
 	private final String href;
+	private final String rel;
 
 	public String getHref() {
 		return href;
