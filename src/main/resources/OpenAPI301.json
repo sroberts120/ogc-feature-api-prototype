@@ -14,7 +14,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8080/",
+            "url": "https://os-ogc-features-api.azurewebsites.net/",
             "description": "This server"
         }
     ],

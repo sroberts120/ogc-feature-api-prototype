@@ -51,10 +51,10 @@ public class WfsFeaturesController {
 	public Links landingPage(@RequestHeader("Accept") String accept, @RequestParam(required = false) String f) {
 		//TODO implement correct error handling according to spec
 		if (f == null || f.equals("application/json")) {
-			Link landingPage = new Link("self", "application/json", "This document", "http://localhost:8080/?f=application%2Fjson");
-			Link api = new Link("service", "application/json", "API definition for this endpoint as application/json", "http://localhost:8080/api?f=application%2Fjson");
-			Link conformance = new Link("conformance", "application/json", "Conformance declaratoin as application/json", "http://localhost:8080/conformance?f=application%2Fjson");
-			Link data = new Link("data", "application/json", "Collections Metadata as application/json", "http://localhost:8080/collections?f=application%2Fjson");
+			Link landingPage = new Link("self", "application/json", "This document", "https://os-ogc-features-api.azurewebsites.net/?f=application%2Fjson");
+			Link api = new Link("service", "application/json", "API definition for this endpoint as application/json", "https://os-ogc-features-api.azurewebsites.net/api?f=application%2Fjson");
+			Link conformance = new Link("conformance", "application/json", "Conformance declaratoin as application/json", "https://os-ogc-features-api.azurewebsites.net/conformance?f=application%2Fjson");
+			Link data = new Link("data", "application/json", "Collections Metadata as application/json", "https://os-ogc-features-api.azurewebsites.net/collections?f=application%2Fjson");
 
 			ArrayList<Link> linkArray = new ArrayList<>();
 			linkArray.add(landingPage);
