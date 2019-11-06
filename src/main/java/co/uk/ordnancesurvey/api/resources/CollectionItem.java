@@ -29,6 +29,10 @@ public class CollectionItem {
 	private final String title;
 	private final ArrayList<Double> extents;
 	private final ArrayList<Link> links;
+	private final String crs = "http://www.opengis.net/def/crs/EPSG/0/27700";
+	public String getCrs() {
+		return crs;
+	}
 
 	
 
