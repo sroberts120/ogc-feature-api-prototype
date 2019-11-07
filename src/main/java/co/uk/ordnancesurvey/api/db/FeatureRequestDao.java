@@ -9,6 +9,6 @@ public interface FeatureRequestDao {
 	 * @return true if request is successfully added, false if customer failed to add.
 	 * @throws Exception if any error occurs.
 	 */
-	String getFeatures(String featureType) throws Exception;
+	String getFeatures(String featureType, int limit, int offset) throws Exception;
 
 }

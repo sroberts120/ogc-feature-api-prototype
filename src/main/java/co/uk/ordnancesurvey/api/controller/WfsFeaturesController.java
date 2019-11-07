@@ -159,10 +159,21 @@ public class WfsFeaturesController {
 	}
 
 	@RequestMapping(value = "/collections/{example}/items", produces = "application/json")
-	public String collectionItems(@PathVariable("example") String example,@RequestHeader("Accept") String accept, @RequestParam(required = false) String f) throws Exception {
+	public String collectionItems(@PathVariable("example") String example, @RequestHeader("Accept") String accept,
+			@RequestParam(required = false) String f, @RequestParam(required = false) String limit,
+			@RequestParam(required = false) String offset) throws Exception {
 		if (f == null || f.equals("application/json")) {
-		return featureRequestDao.getFeatures(example);
-		}else {
+			if (limit == null & offset==null) {
+				return featureRequestDao.getFeatures(example, 100,0);
+
+			} else if (limit!= null && offset == null){
+			return featureRequestDao.getFeatures(example, Integer.parseInt(limit), 0);
+			}
+			else {
+				return featureRequestDao.getFeatures(example, Integer.parseInt(limit), Integer.parseInt(offset));
+
+			}
+		} else {
 			throw new InvalidAcceptsTypeException(f);
 
 		}
