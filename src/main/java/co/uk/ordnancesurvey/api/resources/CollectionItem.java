@@ -4,12 +4,17 @@ import java.util.ArrayList;
 
 public class CollectionItem {
 
-	public CollectionItem(String id, String title, ArrayList<Double> extents, ArrayList<Link> links) {
+	public CollectionItem(String id, String title,String description, Extent extent, ArrayList<Link> links) {
 		super();
 		this.id = id;
-		this.extents = extents;
+		this.extent = extent;
 		this.title = title;
 		this.links = links;
+		this.description = description;
+	}
+
+	public String getDescription() {
+		return description;
 	}
 
 	public String getId() {
@@ -18,8 +23,8 @@ public class CollectionItem {
 	public String getTitle() {
 		return title;
 	}
-	public ArrayList<Double> getExtents() {
-		return extents;
+	public Extent getExtent() {
+		return extent;
 	}
 	public ArrayList<Link> getLinks() {
 		return links;
@@ -27,7 +32,8 @@ public class CollectionItem {
 
 	private final String id;
 	private final String title;
-	private final ArrayList<Double> extents;
+	private final String description;
+	private final Extent extent;
 	private final ArrayList<Link> links;
 	private final String crs = "http://www.opengis.net/def/crs/EPSG/0/27700";
 	public String getCrs() {

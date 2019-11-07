@@ -21,8 +21,10 @@ import co.uk.ordnancesurvey.api.db.FeatureRequestDao;
 import co.uk.ordnancesurvey.api.resources.CollectionItem;
 import co.uk.ordnancesurvey.api.resources.Collections;
 import co.uk.ordnancesurvey.api.resources.ConformsTo;
+import co.uk.ordnancesurvey.api.resources.Extent;
 import co.uk.ordnancesurvey.api.resources.Link;
 import co.uk.ordnancesurvey.api.resources.Links;
+import co.uk.ordnancesurvey.api.resources.Spatial;
 import co.uk.ordnancesurvey.exceptions.InvalidAcceptsTypeException;
 
 /**
@@ -67,7 +69,8 @@ public class WfsFeaturesController {
 		if (f == null || f.equals("application/json")) {
 			Link landingPage = new Link("self", "application/json", "This document",
 					serviceURL + "/?f=application%2Fjson");
-			Link api = new Link("service", "application/json", "API definition for this endpoint as application/json",
+			Link api = new Link("service-desc", "application/json",
+					"The canonical representation of the OpenAPI 3.0 document that describes the API offered at this endpoint as application/json",
 					serviceURL + "/api?f=application%2Fjson");
 			Link conformance = new Link("conformance", "application/json",
 					"Conformance declaratoin as application/json", serviceURL + "/conformance?f=application%2Fjson");
@@ -119,13 +122,24 @@ public class WfsFeaturesController {
 	public ResponseEntity<Object> conformance() throws IOException, ParseException {
 		ArrayList<String> conformsTo = new ArrayList<>();
 		conformsTo.add("http://www.opengis.net/spec/wfs-1/3.0/req/core");
-		conformsTo.add("http://www.opengis.net/spec/wfs-1/3.0/req/oas30");
 		conformsTo.add("http://www.opengis.net/spec/wfs-1/3.0/req/geojson");
 		ConformsTo comformance = new ConformsTo(conformsTo);
 		return new ResponseEntity<Object>(comformance, HttpStatus.OK);
 
 	}
 
+	/**
+	 * Collection
+	 * 
+	 * Builds a view on avalaible data collections. Reponse returned in
+	 * application/json
+	 * 
+	 * In this instance we only have building available
+	 * 
+	 * @return avaliable data collections
+	 * @throws IOException
+	 * @throws ParseException
+	 */
 	@RequestMapping(value = "/collections", produces = "application/json")
 	public ResponseEntity<Object> collection() throws IOException, ParseException {
 		Link landingPage = new Link("self", "application/json", "This document",
@@ -138,19 +152,17 @@ public class WfsFeaturesController {
 		collectionResponse.add(linksSet);
 
 		ArrayList<CollectionItem> collectionItems = new ArrayList<CollectionItem>();
-		ArrayList<Double> extents = new ArrayList<Double>();
 
-		extents.add(439944.151633296);
-		extents.add(109902.415881345);
-		extents.add(445088.251638941);
-		extents.add(115013.188889576);
+		Extent extent = new Extent(new Spatial());
 
 		ArrayList<Link> collectionLink = new ArrayList<Link>();
 		collectionLink.add(new Link("item", "application/json", "Buildings items as application/json",
 				serviceURL + "/collections/buildings/items?f=application/json"));
+		collectionLink.add(new Link("self", "application/json", "this document",
+				serviceURL + "/collections/buildings?f=application/json"));
 
-		CollectionItem collectionItem = new CollectionItem("buildings_southampton_city",
-				"Buildings within the Southampton (UK) area", extents, collectionLink);
+		CollectionItem collectionItem = new CollectionItem("buildings_southampton_city", "southampton buildings",
+				"Buildings within the central Southampton city area", extent, collectionLink);
 		collectionItems.add(collectionItem);
 		Collections collections = new Collections(collectionItems);
 		collectionResponse.add(collections);
@@ -158,20 +170,83 @@ public class WfsFeaturesController {
 
 	}
 
+	/**
+	 * Collection
+	 * 
+	 * This shows the relevant metadata about a given collection.
+	 * 
+	 * Including links to its items
+	 * @param example
+	 * @param accept
+	 * @param f
+	 * @param limit
+	 * @param offset
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/collections/{example}", produces = "application/json")
+	public CollectionItem collectionItem(@PathVariable("example") String example,
+			@RequestHeader("Accept") String accept, @RequestParam(required = false) String f,
+			@RequestParam(required = false) String limit, @RequestParam(required = false) String offset)
+			throws Exception {
+		if (f == null || f.equals("application/json")) {
+			Extent extent = new Extent(new Spatial());
+			ArrayList<Link> collectionLink = new ArrayList<Link>();
+			collectionLink.add(new Link("item", "application/json", "Buildings items as application/json",
+					serviceURL + "/collections/buildings/items?f=application/json"));
+			collectionLink.add(new Link("self", "application/json", "this document",
+					serviceURL + "/collections/buildings?f=application/json"));
+
+			CollectionItem collectionItem = new CollectionItem("buildings_southampton_city", "southampton buildings",
+					"Buildings within the central Southampton city area", extent, collectionLink);
+			return collectionItem;
+
+		} else {
+			throw new InvalidAcceptsTypeException(f);
+
+		}
+
+	}
+
+	
+	/**
+	 * Items
+	 * 
+	 * Items returns data against given filters
+	 * 
+	 * @param example
+	 * @param accept
+	 * @param f
+	 * @param limit
+	 * @param offset
+	 * @return
+	 * @throws Exception
+	 */
 	@RequestMapping(value = "/collections/{example}/items", produces = "application/json")
 	public String collectionItems(@PathVariable("example") String example, @RequestHeader("Accept") String accept,
 			@RequestParam(required = false) String f, @RequestParam(required = false) String limit,
-			@RequestParam(required = false) String offset) throws Exception {
+			@RequestParam(required = false) String offset,@RequestParam(required = false) String bbox) throws Exception {
 		if (f == null || f.equals("application/json")) {
-			if (limit == null & offset==null) {
-				return featureRequestDao.getFeatures(example, 100,0);
+			if(bbox != null){
+				if (limit == null & offset == null) {
+					return featureRequestDao.getFeatureSpatial(example, 100, 0, bbox);
 
-			} else if (limit!= null && offset == null){
-			return featureRequestDao.getFeatures(example, Integer.parseInt(limit), 0);
-			}
-			else {
+				} else if (limit != null && offset == null) {
+					return featureRequestDao.getFeatureSpatial(example, Integer.parseInt(limit), 0,bbox);
+				} else {
+					return featureRequestDao.getFeatureSpatial(example, Integer.parseInt(limit), Integer.parseInt(offset),bbox);
+
+				}
+			}else{
+			if (limit == null & offset == null) {
+				return featureRequestDao.getFeatures(example, 100, 0);
+
+			} else if (limit != null && offset == null) {
+				return featureRequestDao.getFeatures(example, Integer.parseInt(limit), 0);
+			} else {
 				return featureRequestDao.getFeatures(example, Integer.parseInt(limit), Integer.parseInt(offset));
 
+			}
 			}
 		} else {
 			throw new InvalidAcceptsTypeException(f);

@@ -65,4 +65,36 @@ public class PostgresFeatureRequestDao implements FeatureRequestDao {
 		}
 		return null;
 	}
+
+	@Override
+	public String getFeatureSpatial(String featureType, int limit, int offset, String bbox) throws Exception {
+		try (Connection connection = dataSource.getConnection();
+				Statement stmt = connection.createStatement();){
+			   
+					
+				String nextLink;
+				String previousLink;
+				if(offset == 0){
+					previousLink = "'{href, rel}','{prev, "+serviceURL+"/collections/"+featureType+"/items?f=application/json&limit="+limit+"&offset=0}'";
+				} else {
+					previousLink = "'{href, rel}','{prev, "+serviceURL+"/collections/"+featureType+"/items?f=application/json&limit="+limit+"&offset="+(offset-limit)+"}'";
+				}
+				
+				nextLink = "'{href, rel}','{next, "+serviceURL+"/collections/"+featureType+"/items?f=application/json&limit="+limit+"&offset="+(offset+limit)+"}'";
+				String jsobParamarmeterizedBuilderQuery = "SELECT jsonb_build_object('type','FeatureCollection','crs', jsonb_build_object('type', 'EPSG', 'properties', jsonb_build_object('code',27700, 'coordinate_order',array_to_json('{1,0}'::int[]))),'features', jsonb_agg(features.feature),'numberMatched', (SELECT count(1) FROM topo_all_in_one.buildings),'numberReturned', %s,'links', json_build_array(json_object( %s ), json_object( %s ))) FROM (SELECT jsonb_build_object('type',       'Feature','id', feature_id,'geometry',   ST_AsGeoJSON(geometry)::jsonb,'properties', to_jsonb(inputs) - 'feature_id' - 'geometry' - 'page_ordering') AS feature FROM (SELECT * FROM topo_all_in_one.buildings where (geometry && ST_MakeEnvelope(440515, 112486, 441400, 113020, 27700)) AND ST_Intersects(geometry, ST_MakeEnvelope(440515, 112486, 441400, 113020, 27700)) ORDER BY page_ordering LIMIT %s OFFSET %s) inputs) features;";
+				String query = String.format(jsobParamarmeterizedBuilderQuery, Integer.toString(limit),
+						previousLink, nextLink,
+						Integer.toString(limit), Integer.toString(offset));
+
+				System.out.println(query);
+				
+				//ResultSet results = statement.executeQuery();
+				 ResultSet rs = stmt.executeQuery(query);
+				 rs.next();
+				return rs.getString(1);
+			} catch (SQLException ex) {
+				LOG.info("WARNING : Failed to execute following SQL : " + ex.getMessage());
+			}
+			return null;
+	}
 }
