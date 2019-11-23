@@ -2,9 +2,43 @@ package co.uk.ordnancesurvey.api.resources;
 
 import java.util.ArrayList;
 
+/**
+ * POJO representing a collection item. 
+ * This is the definition of a feature set being returned
+ */
 public class CollectionItem {
 
-	public CollectionItem(String id, String title,String description, Extent extent, ArrayList<Link> links) {
+	/** Collection item ID e.g buildings */
+	private final String id;
+
+	/** Collection title */
+	private final String title;
+
+	/** Collection item description */
+	private final String description;
+
+	/**
+	 * The extent object defining spatial extent of geometries within collection
+	 */
+	private final Extent extent;
+
+	/** Set of links applicable to this collection */
+	private final Links links;
+
+	/** Coordinate reference system. OS used BNG */
+	private final String crs = "http://www.opengis.net/def/crs/EPSG/0/27700";
+
+	/**
+	 * Collecition Item constructor
+	 * 
+	 * @param id
+	 * @param title
+	 * @param description
+	 * @param extent
+	 * @param links
+	 */
+	public CollectionItem(final String id, final String title, final String description, final Extent extent,
+			final Links links) {
 		super();
 		this.id = id;
 		this.extent = extent;
@@ -20,26 +54,21 @@ public class CollectionItem {
 	public String getId() {
 		return id;
 	}
+
 	public String getTitle() {
 		return title;
 	}
+
 	public Extent getExtent() {
 		return extent;
 	}
+
 	public ArrayList<Link> getLinks() {
-		return links;
+		return links.getLinks();
 	}
 
-	private final String id;
-	private final String title;
-	private final String description;
-	private final Extent extent;
-	private final ArrayList<Link> links;
-	private final String crs = "http://www.opengis.net/def/crs/EPSG/0/27700";
 	public String getCrs() {
 		return crs;
 	}
-
-	
 
 }

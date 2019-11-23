@@ -9,8 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Basic spring boot RESTful application to test/prototype the new WFS FES
  * specififcation defined by OGC
  *
- * @author sroberts
- *
  */
 @SpringBootApplication
 public class Application {
@@ -18,7 +16,7 @@ public class Application {
 	/**
 	 * Main method.
 	 * 
-	 * Any input paramaters will be defined in the application.properties
+	 * Any input paramaters are be defined in the application.properties
 	 * 
 	 * @param args
 	 */

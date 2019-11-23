@@ -2,6 +2,9 @@ package co.uk.ordnancesurvey.api.resources;
 
 import java.util.ArrayList;
 
+/**
+ * Links object wraps up indvidual links for a resource together.
+ */
 public class Links {
 
 	private final ArrayList<Link> links;
