@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import co.uk.ordnancesurvey.api.db.FeatureRequestDao;
 import co.uk.ordnancesurvey.api.resources.CollectionItem;
 import co.uk.ordnancesurvey.api.resources.Collections;
 import co.uk.ordnancesurvey.api.resources.ConformsTo;
@@ -25,6 +24,7 @@ import co.uk.ordnancesurvey.api.resources.Extent;
 import co.uk.ordnancesurvey.api.resources.Links;
 import co.uk.ordnancesurvey.api.resources.LinksFactory;
 import co.uk.ordnancesurvey.api.resources.Spatial;
+import co.uk.ordnancesurvey.api.service.FeatureRequestService;
 import co.uk.ordnancesurvey.exceptions.InvalidAcceptsTypeException;
 
 /**
@@ -42,12 +42,11 @@ import co.uk.ordnancesurvey.exceptions.InvalidAcceptsTypeException;
 @RestController
 public class WfsFeaturesController {
 
-	/** Request Database Acess Object */
-	@Autowired
-	private FeatureRequestDao featureRequestDao;
-
 	@Value("${ogc.service.url}")
 	private String serviceURL;
+	
+	@Autowired
+	private FeatureRequestService featureRequestService;
 	
 	@Autowired
 	private LinksFactory linksFactory;
@@ -63,9 +62,9 @@ public class WfsFeaturesController {
 	 * @return Links the set of links to avaliable services
 	 */
 	@RequestMapping(value = "/", produces = "application/json")
-	public Links landingPage(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) {
+	public Links getLandingPage(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) {
 		if (isJsonAcceptsType(accept, f)) {
-			return linksFactory.buildLandingPageLinks();
+			return linksFactory.buildLandingPageLinks(serviceURL);
 		} else {
 			throw new InvalidAcceptsTypeException(f);
 		}
@@ -83,13 +82,13 @@ public class WfsFeaturesController {
 	 * @throws IOException
 	 */
 	@RequestMapping(value = "/api", produces = "application/json")
-	public ResponseEntity<Object> api(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) throws IOException {
+	public String getOpenApi(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) throws IOException {
 		if (isJsonAcceptsType(accept, f)) {
 			final ClassLoader classLoader = getClass().getClassLoader();
 			final InputStream inputStream = classLoader.getResourceAsStream("OpenAPI301.json");
 			String openAPI = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 			openAPI = openAPI.replace("####", serviceURL);
-			return new ResponseEntity<Object>(openAPI, HttpStatus.OK);
+			return openAPI;
 		} else {
 			throw new InvalidAcceptsTypeException(f);
 		}
@@ -105,7 +104,7 @@ public class WfsFeaturesController {
 	 * @throws ParseException
 	 */
 	@RequestMapping(value = "/conformance", produces = "application/json")
-	public ResponseEntity<Object> conformance(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) {
+	public ResponseEntity<Object> getConformance(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) {
 		if (isJsonAcceptsType(accept, f)) {
 		final ArrayList<String> conformsTo = new ArrayList<>();
 		conformsTo.add("http://www.opengis.net/spec/wfs-1/3.0/req/core");
@@ -130,16 +129,16 @@ public class WfsFeaturesController {
 	 * @throws ParseException
 	 */
 	@RequestMapping(value = "/collections", produces = "application/json")
-	public ResponseEntity<Object> collection(@RequestHeader("Accept") String accept, @RequestParam(required = false) String f) {
+	public ResponseEntity<Object> getCollections(@RequestHeader("Accept") String accept, @RequestParam(required = false) String f) {
 		if (isJsonAcceptsType(accept, f)) {
 		final Extent extent = new Extent(new Spatial());
-		final CollectionItem buildingsItem = new CollectionItem("buildings_southampton_city", "southampton buildings","Buildings within the central Southampton city area", extent, linksFactory.buildCollectionsBuildingLinks());
+		final CollectionItem buildingsItem = new CollectionItem("buildings_southampton_city", "southampton buildings","Buildings within the central Southampton city area", extent, linksFactory.buildCollectionsBuildingLinks(serviceURL));
 		final ArrayList<CollectionItem> collectionItems = new ArrayList<CollectionItem>();
 		collectionItems.add(buildingsItem);
 		final Collections collections = new Collections(collectionItems);
 		
 		final ArrayList<Object> collectionResponse = new ArrayList<>();
-		collectionResponse.add(linksFactory.buildCollectionSelfLinks());
+		collectionResponse.add(linksFactory.buildCollectionSelfLinks(serviceURL));
 		collectionResponse.add(collections);
 		return new ResponseEntity<Object>(collectionResponse, HttpStatus.OK);
 		} else {
@@ -160,10 +159,10 @@ public class WfsFeaturesController {
 	 * @return collection metadata in application/json
 	 */
 	@RequestMapping(value = "/collections/{collection}", produces = "application/json")
-	public CollectionItem collectionItem(@PathVariable("collection") String collection, @RequestHeader("Accept") String accept, @RequestParam(required = false) String f) {
+	public CollectionItem getCollectionItemDescription(@PathVariable("collection") String collection, @RequestHeader("Accept") String accept, @RequestParam(required = false) String f) {
 		if (isJsonAcceptsType(accept, f)) {
 			Extent extent = new Extent(new Spatial());
-			CollectionItem collectionItem = new CollectionItem("buildings_southampton_city", "southampton buildings", "Buildings within the central Southampton city area", extent, linksFactory.buildCollectionsBuildingLinks());
+			CollectionItem collectionItem = new CollectionItem("buildings_southampton_city", "southampton buildings", "Buildings within the central Southampton city area", extent, linksFactory.buildCollectionsBuildingLinks(serviceURL));
 			return collectionItem;
 		} else {
 			throw new InvalidAcceptsTypeException(f);
@@ -184,7 +183,7 @@ public class WfsFeaturesController {
 	 * @throws Exception
 	 */
 	@RequestMapping(value = "/collections/{collection}/items", produces = "application/json")
-	public String collectionItems(
+	public String getCollectionItems(
 			@PathVariable("collection") String collection,
 			@RequestHeader("Accept") String accept,
 			@RequestParam(required = false) String f,
@@ -192,15 +191,8 @@ public class WfsFeaturesController {
 			@RequestParam(required = false) String offset,
 			@RequestParam(required = false) String bbox)
 			throws Exception {
-		
 		if (isJsonAcceptsType(accept, f)) {
-				if (limit == null & offset == null) {
-					return featureRequestDao.getFeatures(collection, 100, 0, bbox);
-				} else if (limit != null && offset == null) {
-					return featureRequestDao.getFeatures(collection, Integer.parseInt(limit), 0, bbox);
-				} else {
-					return featureRequestDao.getFeatures(collection, Integer.parseInt(limit), Integer.parseInt(offset), bbox);
-				}
+			return featureRequestService.getFeatures(collection, limit, offset, bbox);
 		} else {
 			throw new InvalidAcceptsTypeException(f);
 		}
