@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
  * Application entry point.
  * 
  * Basic spring boot RESTful application to test/prototype the new WFS FES
- * specififcation defined by OGC
+ * specification defined by OGC
  *
  */
 @SpringBootApplication
@@ -18,7 +18,7 @@ public class Application {
 	/**
 	 * Main method.
 	 * 
-	 * Any input paramaters are be defined in the application.properties
+	 * Any input parameters are be defined in the application.properties
 	 * 
 	 * @param args
 	 */

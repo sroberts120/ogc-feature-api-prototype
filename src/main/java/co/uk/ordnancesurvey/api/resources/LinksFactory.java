@@ -2,7 +2,6 @@ package co.uk.ordnancesurvey.api.resources;
 
 import java.util.ArrayList;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -197,6 +197,33 @@ public class WfsFeaturesController {
 			throw new InvalidAcceptsTypeException(f);
 		}
 	}
+	
+	/**
+	 * Feature
+	 * 
+	 * Returns an indvidual feature by ID
+	 * 
+	 * @param collection
+	 * @param accept
+	 * @param id
+	 * @param f
+	 * @return
+	 * @throws Exception
+	 */
+	@RequestMapping(value = "/collections/{collection}/items/{id}", produces = "application/json")
+	public String getFeatureItem(
+			@PathVariable("collection") String collection,
+			@PathVariable("id") String id,
+			@RequestHeader("Accept") String accept,
+			@RequestParam(required = false) String f)
+			throws Exception {
+		if (isJsonAcceptsType(accept, f)) {
+			return featureRequestService.getFeature(collection, id);
+		} else {
+			throw new InvalidAcceptsTypeException(f);
+		}
+	}
+
 
 	/**
 	 * Method to decide if the response request type is acceptable. This service

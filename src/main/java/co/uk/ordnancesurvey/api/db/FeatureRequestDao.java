@@ -13,5 +13,14 @@ public interface FeatureRequestDao {
 	 */
 	String getFeatures(String featureType, int limit, int offset,String bbox) throws Exception;
 	
+	/**
+	 * Request feature by id
+	 * 	 * 
+	 * Repsonse built fully in the SQL statement. No post processing.
+	 * 
+	 * @throws Exception if any error occurs.
+	 */
+	String getFeature(String featureType, String id) throws Exception;
+
 
 }

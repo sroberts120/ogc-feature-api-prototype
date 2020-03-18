@@ -7,6 +7,7 @@ public class PostgresFeaturesQuery {
 	private final Integer limit;
 	private final Integer offset;
 	private final String bbox;
+	private final String id;
 
 	private final static String parameterisedSelectStatement = "SELECT "
 			+ "jsonb_build_object(" 
@@ -27,6 +28,8 @@ public class PostgresFeaturesQuery {
 
 	private final static String parameterisedBboxWhereFilter = "WHERE" + " (geometry && st_makeenvelope(%s, 27700))"
 			+ " AND " + "st_intersects(geometry, st_makeenvelope(%s, 27700)) ";
+	
+	private final static String parameterisedIdWhereFilter = "WHERE" + " (feature_id = '%s')";
 
 	public String getFeatureQuery() {
 		return featureQuery;
@@ -47,13 +50,18 @@ public class PostgresFeaturesQuery {
 	public String getBbox() {
 		return bbox;
 	}
+	
+	public String getId(){
+		return id;
+	}
 
-	public PostgresFeaturesQuery(String featureQuery, String featureType, Integer limit, Integer offset, String bbox) {
+	public PostgresFeaturesQuery(String featureQuery, String featureType, Integer limit, Integer offset, String bbox, String id) {
 		this.featureQuery = featureQuery;
 		this.featureType = featureType;
 		this.limit = limit;
 		this.offset = offset;
 		this.bbox = bbox;
+		this.id = id;
 	}
 
 	public static class Builder {
@@ -62,6 +70,7 @@ public class PostgresFeaturesQuery {
 		private Integer limit;
 		private Integer offset;
 		private String bbox;
+		private String id;
 
 		public Builder setServiceURL(String serviceURL) {
 			this.serviceURL = serviceURL;
@@ -87,6 +96,11 @@ public class PostgresFeaturesQuery {
 			this.bbox = bbox;
 			return this;
 		}
+		
+		public Builder setId(String id) {
+			this.id = id;
+			return this;
+		}
 
 		public PostgresFeaturesQuery build() {
 			String previousLink;
@@ -105,10 +119,32 @@ public class PostgresFeaturesQuery {
 			if (bbox != null) {
 				String bboxFilter = String.format(parameterisedBboxWhereFilter, bbox, bbox);
 				fromStatement = String.format(parameterisedFromStatement, bboxFilter, limit, offset);
+			} else if (id != null){
+				String idFilter = String.format(parameterisedIdWhereFilter, id);
+				fromStatement = String.format(parameterisedFromStatement, idFilter, limit, offset);
+			} else {
+			
+				fromStatement = String.format(parameterisedFromStatement, "", limit, offset);
+			}
+			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id);
+		}
+		
+		
+		public PostgresFeaturesQuery buildSingleFeat() {
+			 
+			 String self = "'{rel,href}','{self, " + serviceURL + "/collections/" + featureType + "/items/ID?f=application/json}'";
+			
+			String collection = "'{rel,href}','{collection, " + serviceURL + "/collections/" + featureType + "/items?f=application/json}'";
+
+			String selectStatement = String.format(parameterisedSelectStatement, 1, self, collection);
+			String fromStatement;
+			if (id != null){
+				String idFilter = String.format(parameterisedIdWhereFilter, id);
+				fromStatement = String.format(parameterisedFromStatement, idFilter, limit, offset);
 			} else {
 				fromStatement = String.format(parameterisedFromStatement, "", limit, offset);
 			}
-			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox);
+			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id);
 		}
 	}
 

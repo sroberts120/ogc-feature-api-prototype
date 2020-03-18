@@ -53,4 +53,25 @@ public class PostgresFeatureRequestDao implements FeatureRequestDao {
 		}
 		return null;
 	}
+	
+	@Override
+	public String getFeature(String featureType, String id){
+		
+		PostgresFeaturesQuery postgresFeaturesQuery = new PostgresFeaturesQuery.Builder()
+				.setFeatureType(featureType)
+				.setServiceURL(serviceURL)
+				.setId(id)
+				.buildSingleFeat();
+		
+		try (Connection connection = dataSource.getConnection();
+				Statement stmt = connection.createStatement();){
+				 ResultSet rs = stmt.executeQuery(postgresFeaturesQuery.getFeatureQuery());
+				 rs.next();
+				return rs.getString(1);
+			} catch (SQLException ex) {
+				LOG.info("WARNING : Failed to execute following SQL : " + ex.getMessage());
+			}
+			return null;
+		
+	}
 }
