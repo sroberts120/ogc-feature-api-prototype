@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.uk.ordnancesurvey.api.resources.CollectionItem;
 import co.uk.ordnancesurvey.api.resources.Collections;
+import co.uk.ordnancesurvey.api.resources.CollectionsResponse;
 import co.uk.ordnancesurvey.api.resources.ConformsTo;
 import co.uk.ordnancesurvey.api.resources.Extent;
 import co.uk.ordnancesurvey.api.resources.Links;
@@ -107,8 +108,9 @@ public class WfsFeaturesController {
 	public ResponseEntity<Object> getConformance(@RequestHeader("Accept") final String accept, @RequestParam(required = false) final String f) {
 		if (isJsonAcceptsType(accept, f)) {
 		final ArrayList<String> conformsTo = new ArrayList<>();
-		conformsTo.add("http://www.opengis.net/spec/wfs-1/3.0/req/core");
-		conformsTo.add("http://www.opengis.net/spec/wfs-1/3.0/req/geojson");
+		conformsTo.add("http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core");
+		conformsTo.add("http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson");
+		
 		final ConformsTo comformance = new ConformsTo(conformsTo);
 		return new ResponseEntity<Object>(comformance, HttpStatus.OK);
 		} else {
@@ -135,12 +137,16 @@ public class WfsFeaturesController {
 		final CollectionItem buildingsItem = new CollectionItem("buildings_southampton_city", "southampton buildings","Buildings within the central Southampton city area", extent, linksFactory.buildCollectionsBuildingLinks(serviceURL));
 		final ArrayList<CollectionItem> collectionItems = new ArrayList<CollectionItem>();
 		collectionItems.add(buildingsItem);
+		final ArrayList<Object> collectionResponse = new ArrayList<>();
+		collectionResponse.add(collectionItems);
+		collectionResponse.add(linksFactory.buildCollectionSelfLinks(serviceURL));
 		final Collections collections = new Collections(collectionItems);
 		
-		final ArrayList<Object> collectionResponse = new ArrayList<>();
-		collectionResponse.add(linksFactory.buildCollectionSelfLinks(serviceURL));
-		collectionResponse.add(collections);
-		return new ResponseEntity<Object>(collectionResponse, HttpStatus.OK);
+		CollectionsResponse collectionTest = new CollectionsResponse(collections.getCollections(), linksFactory.buildCollectionSelfLinks(serviceURL).getLinks());
+		//final ArrayList<Object> collectionResponse = new ArrayList<>();
+		//collectionResponse.add(linksFactory.buildCollectionSelfLinks(serviceURL));
+		//collectionResponse.add(collections);
+		return new ResponseEntity<Object>(collectionTest, HttpStatus.OK);
 		} else {
 			throw new InvalidAcceptsTypeException(f);
 		}

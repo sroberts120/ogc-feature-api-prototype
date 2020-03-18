@@ -1,6 +1,7 @@
 package co.uk.ordnancesurvey.api.resources;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * Collection object used to hold array of collection items.
@@ -16,10 +17,10 @@ public class Collections {
 
 	/**
 	 * Constructor
-	 * @param collections
+	 * @param collectionItems
 	 */
-	public Collections(ArrayList<CollectionItem> collections) {
-		this.collections = collections;
+	public Collections(ArrayList<CollectionItem> collectionItems) {
+		this.collections = collectionItems;
 	}
 
 	public ArrayList<CollectionItem> getCollections() {
