@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
+import co.uk.ordnancesurvey.api.resources.DateTime;
+
 /**
  * Database User Request DAO.
  * 
@@ -33,7 +35,7 @@ public class PostgresFeatureRequestDao implements FeatureRequestDao {
 	private String serviceURL;
 
 	@Override
-	public String getFeatures(String featureType, int limit, int offset, String bbox) throws Exception {
+	public String getFeatures(String featureType, int limit, int offset, String bbox, DateTime datetime) throws Exception {
 		
 		PostgresFeaturesQuery postgresFeaturesQuery = new PostgresFeaturesQuery.Builder()
 				.setLimit(limit)
@@ -41,6 +43,7 @@ public class PostgresFeatureRequestDao implements FeatureRequestDao {
 				.setFeatureType(featureType)
 				.setServiceURL(serviceURL)
 				.setBbox(bbox)
+				.setDateTime(datetime)
 				.build();
 		
 		try (Connection connection = dataSource.getConnection();

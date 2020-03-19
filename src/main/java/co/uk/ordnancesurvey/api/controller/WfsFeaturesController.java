@@ -195,10 +195,11 @@ public class WfsFeaturesController {
 			@RequestParam(required = false) String f,
 			@RequestParam(required = false) String limit,
 			@RequestParam(required = false) String offset,
-			@RequestParam(required = false) String bbox)
+			@RequestParam(required = false) String bbox,
+			@RequestParam(required = false) String datetime)
 			throws Exception {
 		if (isJsonAcceptsType(accept, f)) {
-			return featureRequestService.getFeatures(collection, limit, offset, bbox);
+			return featureRequestService.getFeatures(collection, limit, offset, bbox, datetime);
 		} else {
 			throw new InvalidAcceptsTypeException(f);
 		}

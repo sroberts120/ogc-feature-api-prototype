@@ -1,5 +1,7 @@
 package co.uk.ordnancesurvey.api.db;
 
+import co.uk.ordnancesurvey.api.resources.DateTime;
+
 public class PostgresFeaturesQuery {
 
 	private final String featureQuery;
@@ -8,6 +10,7 @@ public class PostgresFeaturesQuery {
 	private final Integer offset;
 	private final String bbox;
 	private final String id;
+	private final DateTime datetime;
 
 	private final static String parameterisedSelectStatement = "SELECT "
 			+ "jsonb_build_object(" 
@@ -23,13 +26,17 @@ public class PostgresFeaturesQuery {
 	private final static String parameterisedFromStatement = "FROM " + "(SELECT jsonb_build_object(" + "'type',"
 			+ "'Feature'," + "'id'," + "feature_id," + "'geometry'," + "ST_AsGeoJSON(geometry)::jsonb,"
 			+ "'properties'," + "to_jsonb(inputs) - 'feature_id' - 'geometry' - 'page_ordering')" + " AS feature"
-			+ " FROM "
-			+ "(SELECT * FROM topo_all_in_one.buildings %s ORDER BY page_ordering LIMIT %s OFFSET %s) inputs) features;";
+			+ "  FROM ("
+			+ " (SELECT * "
+			+ " FROM (SELECT ROW_NUMBER() OVER (PARTITION BY feature_id ORDER BY version_timestamp DESC) AS r, t.* FROM topo_all_in_one.buildings t  where %s %s) x WHERE x.r <= 1 )"
+			+ "  ORDER BY page_ordering LIMIT %s OFFSET %s) inputs) features;";
 
-	private final static String parameterisedBboxWhereFilter = "WHERE" + " (geometry && st_makeenvelope(%s, 27700))"
+	private final static String parameterisedBboxWhereFilter = "AND" + " (geometry && st_makeenvelope(%s, 27700))"
 			+ " AND " + "st_intersects(geometry, st_makeenvelope(%s, 27700)) ";
 	
-	private final static String parameterisedIdWhereFilter = "WHERE" + " (feature_id = '%s')";
+	private final static String parameterisedIdWhereFilter = "AND" + " (feature_id = '%s')";
+	
+	private final static String latestTimeParameter = "(version_timestamp <= now()::timestamp)";
 
 	public String getFeatureQuery() {
 		return featureQuery;
@@ -54,14 +61,19 @@ public class PostgresFeaturesQuery {
 	public String getId(){
 		return id;
 	}
+	
+	public DateTime getDateTime(){
+		return datetime;
+	}
 
-	public PostgresFeaturesQuery(String featureQuery, String featureType, Integer limit, Integer offset, String bbox, String id) {
+	public PostgresFeaturesQuery(String featureQuery, String featureType, Integer limit, Integer offset, String bbox, String id, DateTime datetime) {
 		this.featureQuery = featureQuery;
 		this.featureType = featureType;
 		this.limit = limit;
 		this.offset = offset;
 		this.bbox = bbox;
 		this.id = id;
+		this.datetime = datetime;
 	}
 
 	public static class Builder {
@@ -71,6 +83,7 @@ public class PostgresFeaturesQuery {
 		private Integer offset;
 		private String bbox;
 		private String id;
+		private DateTime datetime;
 
 		public Builder setServiceURL(String serviceURL) {
 			this.serviceURL = serviceURL;
@@ -101,6 +114,11 @@ public class PostgresFeaturesQuery {
 			this.id = id;
 			return this;
 		}
+		
+		public Builder setDateTime(DateTime datetime){
+			this.datetime = datetime;
+			return this;
+		}
 
 		public PostgresFeaturesQuery build() {
 			String previousLink;
@@ -116,17 +134,40 @@ public class PostgresFeaturesQuery {
 
 			String selectStatement = String.format(parameterisedSelectStatement, limit, previousLink, nextLink);
 			String fromStatement;
+			String timeQuery;
+			String startTime;
+			String endTime;
+			String timeQueryClause;
+			String timeclause;
+			if(datetime != null){
+				if(datetime.getStartInterval().equals("..")){
+					startTime = "2001-02-12T00:00:00Z";
+				} else {
+					startTime = datetime.getStartInterval();
+				}
+				
+				if(datetime.getEndInterval().equals("..")){
+					endTime = "now()";
+				} else {
+					endTime = datetime.getEndInterval();
+				}
+				
+				timeQueryClause = "(version_timestamp BETWEEN '"+startTime+"'::timestamp AND '"+endTime+"'::timestamp)";
+				
+			} else {
+				timeQueryClause = latestTimeParameter;
+			}
 			if (bbox != null) {
 				String bboxFilter = String.format(parameterisedBboxWhereFilter, bbox, bbox);
-				fromStatement = String.format(parameterisedFromStatement, bboxFilter, limit, offset);
+				fromStatement = String.format(parameterisedFromStatement,timeQueryClause ,bboxFilter, limit, offset);
 			} else if (id != null){
-				String idFilter = String.format(parameterisedIdWhereFilter, id);
-				fromStatement = String.format(parameterisedFromStatement, idFilter, limit, offset);
+				String idFilter = String.format(parameterisedIdWhereFilter,id);
+				fromStatement = String.format(parameterisedFromStatement, timeQueryClause,idFilter, limit, offset);
 			} else {
 			
-				fromStatement = String.format(parameterisedFromStatement, "", limit, offset);
+				fromStatement = String.format(parameterisedFromStatement, timeQueryClause,"", limit, offset);
 			}
-			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id);
+			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id,datetime);
 		}
 		
 		
@@ -140,11 +181,11 @@ public class PostgresFeaturesQuery {
 			String fromStatement;
 			if (id != null){
 				String idFilter = String.format(parameterisedIdWhereFilter, id);
-				fromStatement = String.format(parameterisedFromStatement, idFilter, limit, offset);
+				fromStatement = String.format(parameterisedFromStatement, latestTimeParameter,idFilter, limit, offset);
 			} else {
-				fromStatement = String.format(parameterisedFromStatement, "", limit, offset);
+				fromStatement = String.format(parameterisedFromStatement, latestTimeParameter,"", limit, offset);
 			}
-			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id);
+			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id,datetime);
 		}
 	}
 
