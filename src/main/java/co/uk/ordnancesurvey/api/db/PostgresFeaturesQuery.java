@@ -1,5 +1,9 @@
 package co.uk.ordnancesurvey.api.db;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import co.uk.ordnancesurvey.api.resources.DateTime;
 
 public class PostgresFeaturesQuery {
@@ -120,26 +124,15 @@ public class PostgresFeaturesQuery {
 			return this;
 		}
 
-		public PostgresFeaturesQuery build() {
-			String previousLink;
-			if (offset == 0) {
-				previousLink = "'{href, rel}','{prev, " + serviceURL + "/collections/" + featureType
-						+ "/items?f=application/json&limit=" + limit + "&offset=0}'";
-			} else {
-				previousLink = "'{href, rel}','{prev, " + serviceURL + "/collections/" + featureType
-						+ "/items?f=application/json&limit=" + limit + "&offset=" + (offset - limit) + "}'";
-			}
-			String nextLink = "'{href, rel}','{next, " + serviceURL + "/collections/" + featureType
-					+ "/items?f=application/json&limit=" + limit + "&offset=" + (offset + limit) + "}'";
-
-			String selectStatement = String.format(parameterisedSelectStatement, limit, previousLink, nextLink);
+		public PostgresFeaturesQuery build() throws UnsupportedEncodingException {
+			
 			String fromStatement;
 			String timeQuery;
 			String startTime;
 			String endTime;
 			String timeQueryClause;
 			String timeclause;
-			if(datetime != null){
+			if(datetime != null && datetime.getspecificDateTime() == null){
 				if(datetime.getStartInterval().equals("..")){
 					startTime = "2001-02-12T00:00:00Z";
 				} else {
@@ -154,7 +147,10 @@ public class PostgresFeaturesQuery {
 				
 				timeQueryClause = "(version_timestamp BETWEEN '"+startTime+"'::timestamp AND '"+endTime+"'::timestamp)";
 				
+			} else if (datetime != null && !datetime.getspecificDateTime().isEmpty()){
+				timeQueryClause = "(version_timestamp = '"+datetime.getspecificDateTime()+"'::timestamp)";
 			} else {
+			
 				timeQueryClause = latestTimeParameter;
 			}
 			if (bbox != null) {
@@ -167,8 +163,36 @@ public class PostgresFeaturesQuery {
 			
 				fromStatement = String.format(parameterisedFromStatement, timeQueryClause,"", limit, offset);
 			}
+			
+			
+			
+			String previousLink;
+			if (offset == 0) {
+				previousLink = "'{href, rel}','{prev, " + serviceURL + "/collections/" + featureType
+						+ "/items?f=application/json&limit=" + limit + "&offset=0%s}'";
+			} else {
+				previousLink = "'{href, rel}','{prev, " + serviceURL + "/collections/" + featureType
+						+ "/items?f=application/json&limit=" + limit + "&offset=" + (offset - limit) + "%s}'";
+			}
+			String nextLink = "'{href, rel}','{next, " + serviceURL + "/collections/" + featureType
+					+ "/items?f=application/json&limit=" + limit + "&offset=" + (offset + limit) + "%s}'";
+			
+			StringBuilder filterAddtion = new StringBuilder();
+			if(bbox != null){
+				filterAddtion.append("&bbox="+encodeValue(bbox));
+			}
+			if(datetime!=null){
+				filterAddtion.append("&datetime="+ encodeValue(datetime.getOrginalValue()));
+			}
+			String nextLinkExtended = String.format(nextLink, filterAddtion.toString());
+			String previousLinkExtended =String.format(previousLink, filterAddtion.toString());
+			String selectStatement = String.format(parameterisedSelectStatement, limit, previousLinkExtended, nextLinkExtended);
+			
 			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id,datetime);
 		}
+		private String encodeValue(String value) throws UnsupportedEncodingException {
+			return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+			}
 		
 		
 		public PostgresFeaturesQuery buildSingleFeat() {
@@ -188,5 +212,6 @@ public class PostgresFeaturesQuery {
 			return new PostgresFeaturesQuery((selectStatement + " " + fromStatement), featureType, limit, offset, bbox, id,datetime);
 		}
 	}
+	
 
 }

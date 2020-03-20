@@ -31,7 +31,10 @@ public class FeatureRequestService {
 			String[] splitRange = datetime.split("/");
 			String startInterval = splitRange[0];
 			String endIntevral = splitRange[1];
-		    datetimeObject = new DateTime(startInterval, endIntevral);
+		    datetimeObject = new DateTime(startInterval, endIntevral, null, datetime);
+		} else {
+		    datetimeObject = new DateTime(null, null, datetime,datetime);
+
 		}
 		}
 		
